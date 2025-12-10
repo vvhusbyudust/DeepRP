@@ -3,12 +3,12 @@ chcp 65001 >nul
 title DeepRP - Development Server
 color 0A
 
-echo ╔═══════════════════════════════════════════════════════════════╗
-echo ║                    DeepRP Development Server                  ║
-echo ╠═══════════════════════════════════════════════════════════════╣
-echo ║  Backend:  http://localhost:7412                              ║
-echo ║  Frontend: http://localhost:5173                              ║
-echo ╚═══════════════════════════════════════════════════════════════╝
+echo ===================================================================
+echo                     DeepRP Development Server
+echo ===================================================================
+echo   Backend:  http://localhost:7412
+echo   Frontend: http://localhost:5173
+echo ===================================================================
 echo.
 
 :: Check if Python is available
@@ -27,6 +27,27 @@ if %ERRORLEVEL% neq 0 (
     exit /b 1
 )
 
+:: ===== First-run detection: Python venv =====
+if not exist "%~dp0server\venv" (
+    echo [INFO] First run detected - Creating Python virtual environment...
+    cd /d "%~dp0server"
+    python -m venv venv
+    echo [INFO] Installing Python dependencies...
+    call venv\Scripts\activate.bat
+    pip install -r requirements.txt
+    echo [OK] Python environment ready
+    echo.
+)
+
+:: ===== First-run detection: Node modules =====
+if not exist "%~dp0client\node_modules" (
+    echo [INFO] First run detected - Installing npm dependencies...
+    cd /d "%~dp0client"
+    call npm install
+    echo [OK] npm dependencies installed
+    echo.
+)
+
 :: Kill any existing processes on ports 7412 and 5173
 echo [INFO] Cleaning up existing processes...
 for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":7412"') do (
@@ -36,10 +57,10 @@ for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":5173"') do (
     taskkill /F /PID %%a >nul 2>&1
 )
 
-:: Start backend server
+:: Start backend server (use venv python)
 echo [INFO] Starting backend server on port 7412...
 cd /d "%~dp0server"
-start /B python -m uvicorn main:app --reload --host 0.0.0.0 --port 7412 > backend.log 2>&1
+start /B venv\Scripts\python.exe -m uvicorn main:app --reload --host 0.0.0.0 --port 7412 > backend.log 2>&1
 
 :: Wait for backend to start
 timeout /t 3 /nobreak >nul
@@ -53,7 +74,7 @@ start /B npm run dev > frontend.log 2>&1
 timeout /t 3 /nobreak >nul
 
 echo.
-echo ═══════════════════════════════════════════════════════════════
+echo ===================================================================
 echo   [OK] Both servers started successfully!
 echo.
 echo   Commands:
@@ -64,7 +85,7 @@ echo     4 - Restart backend
 echo     5 - Restart frontend
 echo     6 - Rebuild frontend
 echo     Q - Quit (stop all servers)
-echo ═══════════════════════════════════════════════════════════════
+echo ===================================================================
 echo.
 
 :menu
@@ -100,7 +121,7 @@ if /i "%choice%"=="4" (
         taskkill /F /PID %%a >nul 2>&1
     )
     cd /d "%~dp0server"
-    start /B python -m uvicorn main:app --reload --host 0.0.0.0 --port 7412 > backend.log 2>&1
+    start /B venv\Scripts\python.exe -m uvicorn main:app --reload --host 0.0.0.0 --port 7412 > backend.log 2>&1
     timeout /t 2 /nobreak >nul
     echo [OK] Backend restarted
     goto menu
