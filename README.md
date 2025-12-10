@@ -1,2 +1,225 @@
-# DeepRP
-DeepRP是一个与 SillyTavern 格式兼容的 AI 角色扮演应用，具有独特的多代理工作流、图像生成和 TTS 语音合成功能
+# DeepRP - 智能角色扮演代理系统
+
+一个与 SillyTavern 格式兼容的 AI 角色扮演应用，具有独特的多代理工作流、图像生成和 TTS 语音合成功能。
+
+---
+
+## 📖 目录
+
+- [快速开始](#快速开始)
+- [Agent 工作流](#agent-工作流)
+- [Agent 配置](#agent-配置)
+- [SillyTavern 兼容性](#sillytavern-兼容性)
+- [项目结构](#项目结构)
+- [许可证](#许可证)
+- [致谢](#致谢)
+
+---
+
+## 快速开始
+
+### 启动方式
+
+在项目根目录运行：
+
+```bash
+.\start.bat
+```
+
+服务启动后访问：**http://localhost:5173**
+
+### 首次配置
+
+1. **添加 LLM 配置**：设置 → LLM 配置 → 添加 API 端点和密钥
+2. **导入角色卡**：设置 → 角色 → 导入 SillyTavern 格式角色卡 (.png/.json)
+3. **开始对话**：选择角色，开始聊天
+
+---
+
+## Agent 工作流
+
+DeepRP 采用独特的 **多代理协作架构**，将传统的单 LLM 响应分解为专业化的并行处理流程。
+
+### 工作流架构图
+
+```
+                    ┌──────────────┐
+     用户消息  ──→  │   Director   │
+                    │    导演      │
+                    └──────┬───────┘
+                           │
+                     场景大纲 (Outline)
+                           │
+           ┌───────────────┼───────────────┐
+           │               │               │
+           ▼               ▼               │
+    ┌──────────────┐ ┌──────────────┐      │
+    │    Writer    │ │Paint Director│      │
+    │    作家      │ │  绘画导演    │      │
+    └──────┬───────┘ └──────┬───────┘      │
+           │               │               │
+           │               ▼               │
+           │        ┌──────────────┐       │
+           │        │   Painter    │       │
+           │        │    画家      │       │
+           │        └──────┬───────┘       │
+           │               │               │
+           ▼               ▼               ▼
+      叙事文本          场景配图           │
+           │               │               │
+           └───────────────┼───────────────┘
+                           │
+                           ▼
+                    ┌──────────────┐
+                    │  TTS Actor   │
+                    │   语音演员   │
+                    └──────┬───────┘
+                           │
+                           ▼
+                      语音合成
+```
+
+### 关键特性
+
+**并行处理**：Director 完成后，**Writer 和 Paint Director 同时并行执行**，大幅提升响应速度。
+
+### 各代理职责
+
+| 代理 | 职责 | 输入 | 输出 |
+|------|------|------|------|
+| **Director（导演）** | 分析用户意图，规划场景 | 用户消息 + 上下文 | 场景大纲 |
+| **Writer（作家）** | 撰写叙事响应 | 场景大纲 | 叙事文本 |
+| **Paint Director（绘画导演）** | 生成图像提示词 | 场景大纲 | 图像提示词 |
+| **Painter（画家）** | 调用图像 API 生成图片 | 图像提示词 | 场景配图 |
+| **TTS Actor（语音演员）** | 将对话转换为语音 | 叙事文本中的对话 | 音频文件 |
+
+---
+
+## Agent 配置
+
+**每个代理都需要独立配置**，可根据任务特性选择不同的 LLM 和预设。
+
+### 配置位置
+
+设置 → Agent 配置
+
+### 配置项说明
+
+#### 基础配置
+
+| 配置项 | 说明 |
+|--------|------|
+| **Enable Agent Mode** | 启用/禁用 Agent 模式 |
+| **Director LLM** | 导演使用的语言模型 |
+| **Director Preset** | 导演使用的提示词预设 |
+| **Writer LLM** | 作家使用的语言模型 |
+| **Writer Preset** | 作家使用的提示词预设 |
+
+#### 图像生成配置
+
+| 配置项 | 说明 |
+|--------|------|
+| **Enable Paint** | 启用/禁用配图生成 |
+| **Paint Director LLM** | 绘画导演使用的模型 |
+| **Paint Director Preset** | 绘画导演的预设 |
+| **Image Config** | 图像生成配置（DALL-E/SD/ComfyUI）|
+
+#### TTS 配置
+
+| 配置项 | 说明 |
+|--------|------|
+| **Enable TTS** | 启用/禁用语音合成 |
+| **TTS Config** | TTS 配置（ElevenLabs/OpenAI TTS）|
+
+### 推荐配置
+
+| 代理 | 推荐模型 | 说明 |
+|------|----------|------|
+| Director | GPT-4o / Claude | 需要强推理能力 |
+| Writer | GPT-4o / DeepSeek | 需要好的写作能力 |
+| Paint Director | GPT-4o-mini | 轻量级即可 |
+
+---
+
+## SillyTavern 兼容性
+
+DeepRP 一定程度上兼容 SillyTavern 的格式。
+
+### 兼容性说明
+
+| 类型 | 支持程度 | 说明 |
+|------|----------|------|
+| **角色卡片** | ✅ 支持 | V2 格式，PNG 嵌入，JSON 格式 |
+| **世界书** | ✅ 支持 | 关键词触发，递归扫描 |
+| **预设** | ✅ 支持 | 宏模板，生成参数 |
+
+### 支持的宏
+
+```
+{{char}}        - 角色名
+{{user}}        - 用户名
+{{description}} - 角色描述
+{{personality}} - 角色性格
+{{scenario}}    - 场景设定
+{{wiBefore}}    - 世界书条目（角色前）
+{{wiAfter}}     - 世界书条目（角色后）
+{{roll:2d6}}    - 掷骰子
+{{random:a,b,c}}- 随机选择
+```
+
+所有宏不区分大小写。
+
+---
+
+## 项目结构
+
+```
+DeepRP/
+├── client/                 # 前端 (React + Vite)
+│   ├── src/
+│   │   ├── components/    # UI 组件
+│   │   ├── stores/        # 状态管理 (Zustand)
+│   │   └── index.css      # 样式
+│   └── package.json
+│
+├── server/                 # 后端 (Python + FastAPI)
+│   ├── routers/           # API 路由
+│   │   ├── chat.py        # 聊天接口
+│   │   ├── agent.py       # Agent 接口
+│   │   ├── characters.py  # 角色管理
+│   │   ├── worldbooks.py  # 世界书管理
+│   │   └── presets.py     # 预设管理
+│   ├── services/          # 业务逻辑
+│   │   ├── agent/         # Agent 管道
+│   │   ├── llm/           # LLM 调用
+│   │   ├── image/         # 图像生成
+│   │   └── tts/           # 语音合成
+│   └── main.py            # 入口
+│
+├── data/                   # 运行时数据
+│   ├── characters/        # 角色卡片
+│   ├── worldbooks/        # 世界书
+│   ├── presets/           # 预设
+│   ├── chats/             # 对话记录
+│   ├── images/            # 生成的图片
+│   └── audio/             # 生成的音频
+│
+├── scripts/                # 启动脚本
+├── docker/                 # Docker 配置
+└── start.bat               # 一键启动
+```
+
+---
+
+## 许可证
+
+MIT License
+
+---
+
+## 致谢
+
+- [SillyTavern](https://github.com/SillyTavern/SillyTavern) - 格式兼容性参考
+- [FastAPI](https://fastapi.tiangolo.com/) - 后端框架
+- [React](https://react.dev/) - 前端框架
+- [Zustand](https://github.com/pmndrs/zustand) - 状态管理

@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  deeprp:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "7412:7412"
+    volumes:
+      - ../data:/app/data
+    environment:
+      - DEEPRP_ENCRYPTION_KEY=${DEEPRP_ENCRYPTION_KEY:-}
+      - DEEPRP_DEBUG=false
+    restart: unless-stopped
